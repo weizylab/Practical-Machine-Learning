@@ -1,0 +1,60 @@
+---
+title: "Machine Learning Project"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Data Cleaning
+```{r message=FALSE}
+library(rpart)
+library(caret)
+library(pROC)
+library(tidyverse)
+library(randomForest)
+training <- read.csv("pml-training.csv",na.strings=c("NA","#DIV/0!", ""))
+testing <- read.csv("pml-testing.csv", na.strings=c("NA","#DIV/0!", ""))
+training <- training[,colSums(is.na(training)) == 0]
+testing <- testing[,colSums(is.na(testing)) == 0]
+training <- training[,-c(1:7)]
+testing <- testing[,-c(1:7)]
+```
+
+
+## Train-Test Split
+```{r}
+set.seed(1)
+idx <- createDataPartition(training$classe, p=0.7, list=FALSE)
+train <- training[idx,]
+test <- training[-idx,]
+```
+
+
+## Decision Tree
+```{r}
+mod1 <- rpart(classe ~ ., data=train, method="class")
+result1 <- predict(mod1, test,type = 'class')
+confusionMatrix(result1, as.factor(test$classe))
+```
+We can see from the result that the accuracy for decision tree algorithm is 0.7504 with 95% CI of (0.7391, 0.7614).
+
+
+## Random Forest
+```{r}
+mod2 <- randomForest(as.factor(classe) ~. , data=train, method="class")
+result2 <- predict(mod2, test, type = "class")
+confusionMatrix(result2, as.factor(test$classe))
+```
+We can see from the result that the accuracy for random forest algorithm is 0.9941 with 95% CI of (0.9917, 0.9959).
+
+
+## Final Prediction
+We will choose the random forest algorithm since it has a better prediction result than the decision tree algorithm.
+And here is the final prediction for the 20 test cases.
+```{r}
+final <- predict(mod2, testing, type="class")
+final
+```
+
